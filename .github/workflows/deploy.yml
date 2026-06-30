@@ -1,23 +1,71 @@
-name: Full Stack CI/CD
+name: Build and Push Docker Images
 
 on:
   push:
     branches:
       - main
 
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
 jobs:
-  test:
+
+  docker:
+
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Show Repository Files
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      #############################
+      # Backend
+      #############################
+
+      - name: Build Backend Image
         run: |
-          pwd
-          ls -la
-          echo "Backend"
-          ls backend
-          echo "Frontend"
-          ls frontend
+          docker build \
+          -t backend:${{ github.sha }} \
+          ./backend
+
+      - name: Tag Backend Image
+        run: |
+          docker tag backend:${{ github.sha }} \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/backend:${{ github.sha }}
+
+      - name: Push Backend
+        run: |
+          docker push \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/backend:${{ github.sha }}
+
+      #############################
+      # Frontend
+      #############################
+
+      - name: Build Frontend Image
+        run: |
+          docker build \
+          -t frontend:${{ github.sha }} \
+          ./frontend
+
+      - name: Tag Frontend Image
+        run: |
+          docker tag frontend:${{ github.sha }} \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/frontend:${{ github.sha }}
+
+      - name: Push Frontend
+        run: |
+          docker push \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/frontend:${{ github.sha }}
