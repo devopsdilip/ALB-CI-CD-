@@ -1,5 +1,29 @@
-venv/
-node_modules/
-.vscode/
-__pycache__/
-*.pyc
+# Python
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/app.log
+backend/submissions.json
+
+# Node
+frontend/node_modules/
+
+# Environment
+.env
+
+# AWS CLI downloads
+aws/
+awscliv2.zip
+
+# Task definitions (optional)
+backend/task-definition.json
+frontend/task-definition.json
+
+# Temporary files
+trust-policy.json
+backend/elbv2*
+frontend/ecs*
+
+# OS files
+.DS_Store
+Thumbs.db

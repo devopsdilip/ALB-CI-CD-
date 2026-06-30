@@ -6,17 +6,38 @@ app = Flask(__name__)
 
 FILE_NAME = "submissions.json"
 
-@app.route("/")
-def home():
-    return "Flask Backend is Running!"
 
-@app.route("/submit", methods=["POST"])
+# ========================
+# HEALTH CHECK (IMPORTANT)
+# ========================
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "healthy"}), 200
+
+
+# ========================
+# ROOT API
+# ========================
+@app.route("/api", methods=["GET"])
+def home():
+    return jsonify({
+        "message": "Flask Backend is Running!"
+    })
+
+
+# ========================
+# SUBMIT DATA (POST)
+# ========================
+@app.route("/api/submit", methods=["POST"])
 def submit():
     data = request.json
 
     if os.path.exists(FILE_NAME):
         with open(FILE_NAME, "r") as f:
-            records = json.load(f)
+            try:
+                records = json.load(f)
+            except:
+                records = []
     else:
         records = []
 
@@ -30,15 +51,26 @@ def submit():
         "received": data
     })
 
-@app.route("/data", methods=["GET"])
-def data():
+
+# ========================
+# GET DATA
+# ========================
+@app.route("/api/data", methods=["GET"])
+def get_data():
     if os.path.exists(FILE_NAME):
         with open(FILE_NAME, "r") as f:
-            records = json.load(f)
+            try:
+                records = json.load(f)
+            except:
+                records = []
     else:
         records = []
 
     return jsonify(records)
 
+
+# ========================
+# RUN APP
+# ========================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
