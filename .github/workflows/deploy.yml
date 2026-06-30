@@ -8,15 +8,13 @@ on:
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
 jobs:
-
   deploy:
-
     runs-on: ubuntu-latest
 
     steps:
-
       - uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
@@ -29,66 +27,44 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-####################################################
-# Backend
-####################################################
+      ####################################################
+      # BACKEND
+      ####################################################
 
       - name: Build Backend
-        run: |
-          docker build -t backend:${{ github.sha }} ./backend
+        run: docker build -t backend:${{ github.sha }} ./backend
 
       - name: Push Backend
         run: |
-          docker tag backend:${{ github.sha }} \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/backend:${{ github.sha }}
+          docker tag backend:${{ github.sha }} $ECR_REGISTRY/backend:${{ github.sha }}
+          docker push $ECR_REGISTRY/backend:${{ github.sha }}
 
-          docker push \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/backend:${{ github.sha }}
-
-      - name: Update Backend Task Definition
-        run: |
-          sed -i "s|backend:v2|backend:${{ github.sha }}|g" ecs/backend-task.json
-
-      - name: Register Backend Task
-        run: |
-          aws ecs register-task-definition \
-          --cli-input-json file://ecs/backend-task.json
-
-      - name: Deploy Backend
-        run: |
-          aws ecs update-service \
-          --cluster fullstack-cluster \
-          --service backend-service \
-          --force-new-deployment
-
-####################################################
-# Frontend
-####################################################
+      ####################################################
+      # FRONTEND
+      ####################################################
 
       - name: Build Frontend
-        run: |
-          docker build -t frontend:${{ github.sha }} ./frontend
+        run: docker build -t frontend:${{ github.sha }} ./frontend
 
       - name: Push Frontend
         run: |
-          docker tag frontend:${{ github.sha }} \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/frontend:${{ github.sha }}
+          docker tag frontend:${{ github.sha }} $ECR_REGISTRY/frontend:${{ github.sha }}
+          docker push $ECR_REGISTRY/frontend:${{ github.sha }}
 
-          docker push \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/frontend:${{ github.sha }}
+      ####################################################
+      # ECS DEPLOY
+      ####################################################
 
-      - name: Update Frontend Task Definition
-        run: |
-          sed -i "s|frontend:v2|frontend:${{ github.sha }}|g" ecs/frontend-task.json
-
-      - name: Register Frontend Task
-        run: |
-          aws ecs register-task-definition \
-          --cli-input-json file://ecs/frontend-task.json
-
-      - name: Deploy Frontend
+      - name: Deploy Backend Service
         run: |
           aws ecs update-service \
-          --cluster fullstack-cluster \
-          --service frontend-service \
-          --force-new-deployment
+            --cluster fullstack-cluster \
+            --service backend-service \
+            --force-new-deployment
+
+      - name: Deploy Frontend Service
+        run: |
+          aws ecs update-service \
+            --cluster fullstack-cluster \
+            --service frontend-service \
+            --force-new-deployment

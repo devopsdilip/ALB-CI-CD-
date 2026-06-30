@@ -1,76 +1,74 @@
-from flask import Flask, request, jsonify
-import json
-import os
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-FILE_NAME = "submissions.json"
+# Sample in-memory data (later you’ll replace with DB)
+students = []
 
-
-# ========================
-# HEALTH CHECK (IMPORTANT)
-# ========================
+# ------------------------
+# Health Check Endpoint
+# ------------------------
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({
+        "status": "healthy",
+        "service": "backend",
+        "version": "1.0.0"
+    }), 200
 
 
-# ========================
-# ROOT API
-# ========================
-@app.route("/api", methods=["GET"])
+# ------------------------
+# API Version Endpoint
+# ------------------------
+@app.route("/version", methods=["GET"])
+def version():
+    return jsonify({
+        "version": "1.0.0",
+        "environment": "development"
+    }), 200
+
+
+# ------------------------
+# Create Student (POST)
+# ------------------------
+@app.route("/students", methods=["POST"])
+def add_student():
+    data = request.get_json()
+
+    student = {
+        "id": len(students) + 1,
+        "name": data.get("name"),
+        "email": data.get("email")
+    }
+
+    students.append(student)
+
+    return jsonify({
+        "message": "Student added successfully",
+        "student": student
+    }), 201
+
+
+# ------------------------
+# Get All Students
+# ------------------------
+@app.route("/students", methods=["GET"])
+def get_students():
+    return jsonify({
+        "count": len(students),
+        "students": students
+    }), 200
+
+
+# ------------------------
+# Root
+# ------------------------
+@app.route("/")
 def home():
     return jsonify({
-        "message": "Flask Backend is Running!"
+        "message": "Backend API is running"
     })
 
 
-# ========================
-# SUBMIT DATA (POST)
-# ========================
-@app.route("/api/submit", methods=["POST"])
-def submit():
-    data = request.json
-
-    if os.path.exists(FILE_NAME):
-        with open(FILE_NAME, "r") as f:
-            try:
-                records = json.load(f)
-            except:
-                records = []
-    else:
-        records = []
-
-    records.append(data)
-
-    with open(FILE_NAME, "w") as f:
-        json.dump(records, f, indent=4)
-
-    return jsonify({
-        "message": "Data received successfully",
-        "received": data
-    })
-
-
-# ========================
-# GET DATA
-# ========================
-@app.route("/api/data", methods=["GET"])
-def get_data():
-    if os.path.exists(FILE_NAME):
-        with open(FILE_NAME, "r") as f:
-            try:
-                records = json.load(f)
-            except:
-                records = []
-    else:
-        records = []
-
-    return jsonify(records)
-
-
-# ========================
-# RUN APP
-# ========================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)
