@@ -48,9 +48,17 @@ echo "Updating frontend image..."
 
 FRONTEND_IMAGE="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG"
 
-jq --arg IMAGE "$FRONTEND_IMAGE" \
-'.containerDefinitions[0].image=$IMAGE
-| del(
+BACKEND_URL="http://fullstack-alb-v3-8216980.ap-south-1.elb.amazonaws.com"
+
+jq \
+  --arg IMAGE "$FRONTEND_IMAGE" \
+  --arg BACKEND "$BACKEND_URL" \
+'
+.containerDefinitions[0].image=$IMAGE
+|
+(.containerDefinitions[0].environment[] | select(.name=="BACKEND_URL")).value=$BACKEND
+|
+del(
 .taskDefinitionArn,
 .revision,
 .status,
@@ -58,7 +66,8 @@ jq --arg IMAGE "$FRONTEND_IMAGE" \
 .compatibilities,
 .registeredAt,
 .registeredBy
-)' \
+)
+' \
 frontend-task.json > frontend-new.json
 
 echo "Registering backend task..."

@@ -1,9 +1,9 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:ap-south-1:327481844909:task-definition/frontend-task:7",
+    "taskDefinitionArn": "arn:aws:ecs:ap-south-1:327481844909:task-definition/frontend-task:8",
     "containerDefinitions": [
         {
             "name": "frontend",
-            "image": "327481844909.dkr.ecr.ap-south-1.amazonaws.com/frontend:c29252b0e901b6d7a0e9ba797a88a5268c36990a",
+            "image": "327481844909.dkr.ecr.ap-south-1.amazonaws.com/frontend-v3:406011e393605feef5193786f20384b901111deb",
             "cpu": 0,
             "portMappings": [
                 {
@@ -16,7 +16,7 @@
             "environment": [
                 {
                     "name": "BACKEND_URL",
-                    "value": "http://fullstack-alb-1754024858.ap-south-1.elb.amazonaws.com/api"
+                    "value": "http://fullstack-alb-v3-8216980.ap-south-1.elb.amazonaws.com"
                 }
             ],
             "mountPoints": [],
@@ -27,7 +27,7 @@
     "family": "frontend-task",
     "executionRoleArn": "arn:aws:iam::327481844909:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
-    "revision": 7,
+    "revision": 8,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -55,6 +55,6 @@
     ],
     "cpu": "256",
     "memory": "512",
-    "registeredAt": "2026-06-30T13:19:15.531000+00:00",
+    "registeredAt": "2026-07-01T13:41:50.176000+00:00",
     "registeredBy": "arn:aws:iam::327481844909:user/devops-user"
 }
