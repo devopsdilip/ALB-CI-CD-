@@ -10,8 +10,10 @@ const BACKEND_URL = process.env.BACKEND_URL || "http://backend:5000";
 
 // Home
 app.get("/", async (req, res) => {
-    const students = await axios.get(`${BACKEND_URL}/students`);
-    res.render("index", { students: students.data });
+    const response = await axios.get(`${BACKEND_URL}/students`);
+    res.render("index", {
+        students: response.data.students
+    });
 });
 
 // Register page
@@ -33,7 +35,9 @@ app.get("/success", (req, res) => {
 // Students page
 app.get("/students", async (req, res) => {
     const response = await axios.get(`${BACKEND_URL}/students`);
-    res.render("students", { students: response.data });
+    res.render("students", {
+        students: response.data.students
+    });
 });
 
 app.listen(3000, () => {

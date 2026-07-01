@@ -9,16 +9,10 @@ env:
   AWS_REGION: ap-south-1
   AWS_ACCOUNT_ID: 327481844909
 
-  ECR_BACKEND: backend
-  ECR_FRONTEND: frontend
+  BACKEND_REPOSITORY: backend-v3
+  FRONTEND_REPOSITORY: frontend-v3
 
-  ECS_CLUSTER: fullstack-cluster
-
-  ECS_BACKEND_SERVICE: backend-service
-  ECS_FRONTEND_SERVICE: frontend-service
-
-  BACKEND_TASK_FAMILY: backend-task
-  FRONTEND_TASK_FAMILY: frontend-task
+  ECS_CLUSTER: fullstack-cluster-v3
 
 jobs:
   deploy:
@@ -28,8 +22,7 @@ jobs:
       contents: read
 
     steps:
-
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
@@ -40,103 +33,57 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      ########################################################
-      # BACKEND
-      ########################################################
-
-      - name: Build Backend
+      - name: Build Backend Image
         run: |
           docker build -t backend:${{ github.sha }} ./backend
 
-      - name: Tag Backend
-        run: |
-          docker tag backend:${{ github.sha }} \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/backend:${{ github.sha }}
-
-      - name: Push Backend
-        run: |
-          docker push \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/backend:${{ github.sha }}
-
-      ########################################################
-      # FRONTEND
-      ########################################################
-
-      - name: Build Frontend
+      - name: Build Frontend Image
         run: |
           docker build -t frontend:${{ github.sha }} ./frontend
 
-      - name: Tag Frontend
+      - name: Tag Backend Image
+        run: |
+          docker tag backend:${{ github.sha }} \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPOSITORY:${{ github.sha }}
+
+      - name: Tag Frontend Image
         run: |
           docker tag frontend:${{ github.sha }} \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/frontend:${{ github.sha }}
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPOSITORY:${{ github.sha }}
 
-      - name: Push Frontend
+      - name: Push Backend Image
         run: |
           docker push \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/frontend:${{ github.sha }}
-
-      ########################################################
-      # DOWNLOAD TASK DEFINITIONS
-      ########################################################
-
-      - name: Download Backend Task Definition
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPOSITORY:${{ github.sha }}
+          
+      - name: Tag Backend Latest
         run: |
-          aws ecs describe-task-definition \
-            --task-definition backend-task \
-            --query taskDefinition \
-            > backend-task.json
+          docker tag backend:${{ github.sha }} \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPOSITORY:latest
 
-      - name: Download Frontend Task Definition
+      - name: Push Backend Latest
         run: |
-          aws ecs describe-task-definition \
-            --task-definition frontend-task \
-            --query taskDefinition \
-            > frontend-task.json
+          docker push \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPOSITORY:latest
 
-      ########################################################
-      # UPDATE IMAGE
-      ########################################################
+      - name: Push Frontend Image
+        run: |
+          docker push \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPOSITORY:${{ github.sha }}
 
-      - name: Render Backend Task Definition
-        id: backend-task
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: backend-task.json
-          container-name: backend
-          image: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${{ github.sha }}
+      - name: Tag Frontend Latest
+        run: |
+          docker tag frontend:${{ github.sha }} \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPOSITORY:latest
 
-      - name: Render Frontend Task Definition
-        id: frontend-task
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: frontend-task.json
-          container-name: frontend
-          image: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${{ github.sha }}
+      - name: Push Frontend Latest
+        run: |
+          docker push \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPOSITORY:latest
 
-      ########################################################
-      # DEPLOY BACKEND
-      ########################################################
-
-      - name: Deploy Backend
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.backend-task.outputs.task-definition }}
-          service: backend-service
-          cluster: fullstack-cluster
-          wait-for-service-stability: true
-
-      ########################################################
-      # DEPLOY FRONTEND
-      ########################################################
-
-      - name: Deploy Frontend
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.frontend-task.outputs.task-definition }}
-          service: frontend-service
-          cluster: fullstack-cluster
-          wait-for-service-stability: true
+      - name: Run Deployment Script
+        run: |
+          chmod +x scripts/deploy.sh
+          ./scripts/deploy.sh ${{ github.sha }}

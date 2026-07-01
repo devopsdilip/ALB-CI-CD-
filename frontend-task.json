@@ -1,19 +1,60 @@
 {
-  "family": "frontend-task",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
-  "executionRoleArn": "arn:aws:iam::327481844909:role/ecsTaskExecutionRole",
-  "containerDefinitions": [
-    {
-      "name": "frontend",
-      "image": "327481844909.dkr.ecr.ap-south-1.amazonaws.com/frontend:latest",
-      "portMappings": [{"containerPort": 3000, "protocol": "tcp"}],
-      "environment": [
-        {"name": "BACKEND_URL", "value": "http://fullstack-alb-1754024858.ap-south-1.elb.amazonaws.com/api"}
-      ],
-      "essential": true
-    }
-  ]
+    "taskDefinitionArn": "arn:aws:ecs:ap-south-1:327481844909:task-definition/frontend-task:7",
+    "containerDefinitions": [
+        {
+            "name": "frontend",
+            "image": "327481844909.dkr.ecr.ap-south-1.amazonaws.com/frontend:c29252b0e901b6d7a0e9ba797a88a5268c36990a",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "containerPort": 3000,
+                    "hostPort": 3000,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "BACKEND_URL",
+                    "value": "http://fullstack-alb-1754024858.ap-south-1.elb.amazonaws.com/api"
+                }
+            ],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "systemControls": []
+        }
+    ],
+    "family": "frontend-task",
+    "executionRoleArn": "arn:aws:iam::327481844909:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "revision": 7,
+    "volumes": [],
+    "status": "ACTIVE",
+    "requiresAttributes": [
+        {
+            "name": "com.amazonaws.ecs.capability.ecr-auth"
+        },
+        {
+            "name": "ecs.capability.execution-role-ecr-pull"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+        },
+        {
+            "name": "ecs.capability.task-eni"
+        }
+    ],
+    "placementConstraints": [],
+    "compatibilities": [
+        "EC2",
+        "MANAGED_INSTANCES",
+        "FARGATE"
+    ],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "256",
+    "memory": "512",
+    "registeredAt": "2026-06-30T13:19:15.531000+00:00",
+    "registeredBy": "arn:aws:iam::327481844909:user/devops-user"
 }
